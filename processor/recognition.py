@@ -17,6 +17,7 @@ from torchlight import DictAction
 from torchlight import import_class
 
 from .processor import Processor
+from test_scripts.test_kinetics_skeleton import action_types
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -72,6 +73,9 @@ class REC_Processor(Processor):
     def show_topk(self, k):
         rank = self.result.argsort()
         hit_top_k = [l in rank[i, -k:] for i, l in enumerate(self.label)]
+        top_k = rank[0, -k:]
+        for label_idx in top_k:
+            print(action_types[label_idx])
         accuracy = sum(hit_top_k) * 1.0 / len(hit_top_k)
         self.io.print_log('\tTop{}: {:.2f}%'.format(k, 100 * accuracy))
 
@@ -124,6 +128,9 @@ class REC_Processor(Processor):
             # inference
             with torch.no_grad():
                 output = self.model(data)
+                label_idx = output.argmax().item()
+                label_name = action_types[label_idx]
+                print(f"Action Type: {label_name}")
             result_frag.append(output.data.cpu().numpy())
 
             # get loss
@@ -139,8 +146,8 @@ class REC_Processor(Processor):
             self.show_epoch_info()
 
             # show top-k accuracy
-            for k in self.arg.show_topk:
-                self.show_topk(k)
+            #for k in self.arg.show_topk:
+            self.show_topk(5)
 
     @staticmethod
     def get_parser(add_help=False):
